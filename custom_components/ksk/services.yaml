@@ -1,0 +1,40 @@
+refresh:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: ksk
+get_bill:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: ksk
+    date:
+      required: false
+      selector:
+        date:
+    email:
+      required: false
+      selector:
+        text:
+
+send_readings:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: ksk
+    value:
+      required: true
+      selector:
+        entity:
+          filter:
+            domain: sensor
+            device_class: energy 

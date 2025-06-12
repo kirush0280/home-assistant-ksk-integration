@@ -1,0 +1,190 @@
+{
+  "title": "КСК Калуга",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Укажите учетную запись Калужской Сбытовой Компании",
+        "data": {
+          "password": "Пароль",
+          "username": "Логин (номер лицевого счета)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Не удалось подключиться.",
+      "invalid_auth": "Ошибка аутентификации.",
+      "unknown": "Непредвиденная ошибка.",
+      "no_devices": "В аккаунте не найдено ни одного устройства."
+    },
+    "abort": {
+      "already_configured": "Этот аккаунт уже добавлен в Home Assistant.",
+      "reauth_successful": "Повторная аутентификация выполнена успешно."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Настройки",
+        "description": "Измените настройки интеграции",
+        "data": {
+          "auto_update": "Автоматическое обновление"
+        },
+        "data_description": {
+          "auto_update": "Автоматическое обновление данных раз в сутки по ночам"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "account": {
+        "name": "Лицевой счет"
+      },
+      "user_info": {
+        "name": "Информация о пользователе"
+      },
+      "balance": {
+        "name": "Задолженность"
+      },
+      "penalty": {
+        "name": "Пени"
+      },
+      "accepted_payments": {
+        "name": "Принятые платежи"
+      },
+      "processing_payments": {
+        "name": "Платежи в обработке"
+      },
+      "payment_details": {
+        "name": "Детали платежа"
+      },
+      "meter": {
+        "name": "Счетчик"
+      },
+      "readings": {
+        "name": "Показания"
+      },
+      "readings_основной": {
+        "name": "Показания (основной)"
+      },
+      "readings_день": {
+        "name": "Показания (день)"
+      },
+      "readings_ночь": {
+        "name": "Показания (ночь)"
+      },
+      "readings_пик": {
+        "name": "Показания (пик)"
+      },
+      "tariff": {
+        "name": "Тариф"
+      },
+      "tariff_основной": {
+        "name": "Тариф (основной)"
+      },
+      "tariff_день": {
+        "name": "Тариф (день)"
+      },
+      "tariff_ночь": {
+        "name": "Тариф (ночь)"
+      },
+      "tariff_пик": {
+        "name": "Тариф (пик)"
+      },
+      "consumption": {
+        "name": "Потребление"
+      },
+      "last_consumption": {
+        "name": "Последнее потребление"
+      },
+      "last_payment": {
+        "name": "Последний платеж"
+      },
+      "monthly_consumption": {
+        "name": "Месячное потребление"
+      },
+      "average_consumption": {
+        "name": "Среднее потребление"
+      },
+      "last_update": {
+        "name": "Последнее обновление"
+      },
+      "data_freshness": {
+        "name": "Свежесть данных"
+      },
+      "current_timestamp": {
+        "name": "Последнее обновление"
+      },
+      "counter": {
+        "name": "Счетчик"
+      },
+      "average_rate": {
+        "name": "Средний расход"
+      },
+      "price": {
+        "name": "Цена за кВт·ч (день)"
+      },
+      "readings_date": {
+        "name": "Дата показаний"
+      },
+      "readings_night": {
+        "name": "Показания (ночь)"
+      },
+      "price_night": {
+        "name": "Цена за кВт·ч (ночь)"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Обновить"
+      },
+      "get_bill": {
+        "name": "Получить счет"
+      }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Обновить",
+      "description": "Обновить данные из личного кабинета КСК",
+      "fields": {
+        "device_id": {
+          "name": "Прибор учета",
+          "description": "Выберите прибор учета"
+        }
+      }
+    },
+    "get_bill": {
+      "name": "Получить счет",
+      "description": "Получить счет от КСК",
+      "fields": {
+        "device_id": {
+          "name": "Прибор учета",
+          "description": "Выберите прибор учета"
+        },
+        "date": {
+          "name": "Дата",
+          "description": "Дата счета"
+        },
+        "email": {
+          "name": "Электронная почта",
+          "description": "Отправить счет на электронную почту"
+        }
+      }
+    },
+    "send_readings": {
+      "name": "Отправить показания",
+      "description": "Отправить показания в КСК",
+      "fields": {
+        "device_id": {
+          "name": "Прибор учета",
+          "description": "Выберите прибор учета"
+        },
+        "value": {
+          "name": "Показания",
+          "description": "Показания счетчика, кВт·ч"
+        }
+      }
+    }
+  }
+} 

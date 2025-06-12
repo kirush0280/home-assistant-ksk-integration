@@ -1,0 +1,115 @@
+{
+  "entity": {
+    "sensor": {
+      "account": {
+        "default": "mdi:identifier"
+      },
+      "user_info": {
+        "default": "mdi:account"
+      },
+      "balance": {
+        "default": "mdi:currency-rub"
+      },
+      "penalty": {
+        "default": "mdi:alert-circle"
+      },
+      "accepted_payments": {
+        "default": "mdi:check-circle"
+      },
+      "processing_payments": {
+        "default": "mdi:clock-outline"
+      },
+      "payment_details": {
+        "default": "mdi:receipt"
+      },
+      "meter": {
+        "default": "mdi:counter"
+      },
+      "readings": {
+        "default": "mdi:counter"
+      },
+      "readings_основной": {
+        "default": "mdi:counter"
+      },
+      "readings_день": {
+        "default": "mdi:white-balance-sunny"
+      },
+      "readings_ночь": {
+        "default": "mdi:weather-night"
+      },
+      "readings_пик": {
+        "default": "mdi:trending-up"
+      },
+      "tariff": {
+        "default": "mdi:currency-rub"
+      },
+      "tariff_основной": {
+        "default": "mdi:currency-rub"
+      },
+      "tariff_день": {
+        "default": "mdi:white-balance-sunny"
+      },
+      "tariff_ночь": {
+        "default": "mdi:weather-night"
+      },
+      "tariff_пик": {
+        "default": "mdi:trending-up"
+      },
+      "consumption": {
+        "default": "mdi:flash"
+      },
+      "last_consumption": {
+        "default": "mdi:history"
+      },
+      "last_payment": {
+        "default": "mdi:credit-card"
+      },
+      "monthly_consumption": {
+        "default": "mdi:calendar-month"
+      },
+      "average_consumption": {
+        "default": "mdi:chart-line"
+      },
+      "last_update": {
+        "default": "mdi:clock"
+      },
+      "data_freshness": {
+        "default": "mdi:timer"
+      },
+      "current_timestamp": {
+        "default": "mdi:update"
+      },
+      "counter": {
+        "default": "mdi:meter-electric-outline"
+      },
+      "average_rate": {
+        "default": "mdi:lightning-bolt"
+      },
+      "price": {
+        "default": "mdi:cash"
+      },
+      "readings_date": {
+        "default": "mdi:calendar"
+      },
+      "readings_night": {
+        "default": "mdi:counter"
+      },
+      "price_night": {
+        "default": "mdi:cash"
+      }
+    },
+    "button": {
+      "refresh": {
+        "default": "mdi:refresh"
+      },
+      "get_bill": {
+        "default": "mdi:receipt-text-outline"
+      }
+    }
+  },
+  "services": {
+    "refresh": "mdi:refresh",
+    "get_bill": "mdi:receipt-text-outline",
+    "send_readings": "mdi:receipt-text-send-outline"
+  }
+} 

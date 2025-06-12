@@ -1,0 +1,6 @@
+{
+  "ksk": {
+    "name": "КСК Калуга",
+    "integrations": ["ksk"]
+  }
+} 
