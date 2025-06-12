@@ -1,0 +1,7 @@
+{
+  "name": "КСК Калуга",
+  "domain": "ksk",
+  "homeassistant": "2025.1.0",
+  "country": "RU",
+  "codeowners": ["@kirush0280"]
+} 

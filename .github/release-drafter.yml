@@ -1,0 +1,28 @@
+categories:
+  - title: "💥 Breaking Changes"
+    label: "breaking"
+  - title: "🚀 Features"
+    label: "enhancement"
+  - title: "🔥 Removals and Deprecations"
+    label: "removal"
+  - title: "🐞 Fixes"
+    label: "bug"
+  - title: "📚 Documentation"
+    label: "documentation"
+  - title: "📦 Dependencies"
+    label: "dependencies"
+header: |
+  Интеграция для работы с личным кабинетом КСК Калуга в Home Assistant.
+  
+  **API:** https://svet.kaluga.ru/test7/service
+  
+  **Возможности:**
+  - Мониторинг показаний электросчетчиков
+  - Просмотр баланса и задолженности
+  - Поддержка многотарифного учета
+  - Отправка показаний счетчиков
+
+template: |
+  ## Изменения
+
+  $CHANGES 
