@@ -70,7 +70,7 @@
 [![Добавить интеграцию КСК](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ksk)
 
 ### Данные для входа:
-- **Номер лицевого счета** (например: 204027528)
+- **Номер лицевого счета** (например: 12345678)
 - **Пароль** от личного кабинета [КСК](https://svet.kaluga.ru/auth)
 
 ---
@@ -80,21 +80,21 @@
 Интеграция автоматически создает все доступные сенсоры для вашего лицевого счета:
 
 ### 💰 **Финансовые данные**
-- `sensor.ksk_XXXXXXXXX_balance` - Баланс лицевого счета
-- `sensor.ksk_XXXXXXXXX_penalty` - Начисленные пени
-- `sensor.ksk_XXXXXXXXX_last_payment` - Последний платеж
+- `sensor.ksk_12345678_balance` - Баланс лицевого счета
+- `sensor.ksk_12345678_penalty` - Начисленные пени
+- `sensor.ksk_12345678_last_payment` - Последний платеж
 
 ### ⚡ **Показания счетчика**
-- `sensor.ksk_XXXXXXXXX_readings_day` - Показания (день)
-- `sensor.ksk_XXXXXXXXX_readings_night` - Показания (ночь)
-- `sensor.ksk_XXXXXXXXX_tariff_day` - Тариф (день)
-- `sensor.ksk_XXXXXXXXX_tariff_night` - Тариф (ночь)
+- `sensor.ksk_12345678_readings_day` - Показания (день)
+- `sensor.ksk_12345678_readings_night` - Показания (ночь)
+- `sensor.ksk_12345678_tariff_day` - Тариф (день)
+- `sensor.ksk_12345678_tariff_night` - Тариф (ночь)
 
 ### 📈 **Потребление**
-- `sensor.ksk_XXXXXXXXX_monthly_consumption` - Месячное потребление
-- `sensor.ksk_XXXXXXXXX_average_consumption` - Среднее потребление
+- `sensor.ksk_12345678_monthly_consumption` - Месячное потребление
+- `sensor.ksk_12345678_average_consumption` - Среднее потребление
 
-*Замените XXXXXXXXX на ваш номер лицевого счета*
+*Замените 12345678 на ваш номер лицевого счета*
 
 ---
 
@@ -107,13 +107,13 @@ automation:
   - alias: "КСК: Уведомление о задолженности"
     trigger:
       - platform: numeric_state
-        entity_id: sensor.ksk_XXXXXXXXX_balance
+        entity_id: sensor.ksk_12345678_balance
         below: 0
     action:
       - service: notify.mobile_app_your_phone
         data:
           title: "⚠️ Задолженность по электричеству"
-          message: "Баланс: {{ states('sensor.ksk_XXXXXXXXX_balance') }} ₽"
+          message: "Баланс: {{ states('sensor.ksk_12345678_balance') }} ₽"
 ```
 
 ### Еженедельная проверка показаний
@@ -131,7 +131,7 @@ automation:
     action:
       - service: ksk.refresh
         target:
-          device_id: !device_id "КСК Account XXXXXXXXX"
+          device_id: !device_id "КСК Account 12345678"
 ```
 
 ### График потребления
@@ -140,8 +140,8 @@ automation:
 type: history-graph
 title: "КСК: Потребление"
 entities:
-  - sensor.ksk_XXXXXXXXX_monthly_consumption
-  - sensor.ksk_XXXXXXXXX_average_consumption
+  - sensor.ksk_12345678_monthly_consumption
+  - sensor.ksk_12345678_average_consumption
 hours_to_show: 720
 ```
 
