@@ -42,16 +42,16 @@
 
 ### Через HACS (Рекомендуется)
 
-[![Открыть репозиторий в HACS][hacsbadge]][hacs]
+**Способ 1.** [![Открыть репозиторий в HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kirush0280&repository=home-assistant-ksk-integration&category=integration) → Установить
 
-1. Откройте HACS в Home Assistant
+**Способ 2.** Вручную через HACS:
+1. Откройте HACS в Home Assistant  
 2. Перейдите в **Integrations**
 3. Нажмите **⋮** → **Custom repositories**
 4. Добавьте URL: `https://github.com/kirush0280/home-assistant-ksk-integration`
 5. Выберите категорию: **Integration**
 6. Нажмите **Add** → **Install**
 7. Перезагрузите Home Assistant
-8. Перейдите в **Settings** → **Integrations** → **Add Integration** → **КСК Калуга**
 
 ### Ручная установка
 
@@ -63,12 +63,15 @@
 
 ## ⚙️ **Настройка**
 
-1. Перейдите в **Settings** → **Integrations**
-2. Нажмите **+ Add Integration**
-3. Найдите **КСК Калуга**
-4. Введите данные для входа:
-   - **Номер лицевого счета** (например: 204111118)
-   - **Пароль** от личного кабинета
+**Настройки** → **Устройства и службы** → **Интеграции** → [![Добавить интеграцию](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ksk) → Поиск **КСК Калуга**
+
+или нажмите:
+
+[![Добавить интеграцию КСК](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ksk)
+
+### Данные для входа:
+- **Номер лицевого счета** (например: 204027528)
+- **Пароль** от личного кабинета [КСК](https://svet.kaluga.ru/auth)
 
 ---
 
