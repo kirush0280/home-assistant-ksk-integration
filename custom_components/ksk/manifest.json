@@ -12,5 +12,5 @@
   "codeowners": ["@kirush0280"],
   "iot_class": "cloud_polling",
   "loggers": ["custom_components.ksk"],
-  "version": "1.1.0"
+  "version": "1.1.1"
 } 
