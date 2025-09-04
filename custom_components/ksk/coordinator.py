@@ -1,4 +1,4 @@
-"""КСК Account Coordinator - реальное API через браузерную автоматизацию."""
+"""КСК Account Coordinator - Исправленная версия с прямыми API вызовами."""
 from __future__ import annotations
 
 import asyncio
@@ -37,7 +37,7 @@ from .exceptions import CannotConnect, InvalidAuth
 _LOGGER = logging.getLogger(__name__)
 
 class KSKDataUpdateCoordinator(DataUpdateCoordinator):
-    """Координатор обновления данных КСК."""
+    """Координатор обновления данных КСК - Исправленная версия без браузера."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Инициализация координатора."""
@@ -46,7 +46,7 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
         self.password = entry.data[CONF_PASSWORD]
         self.auth_token = None
         self.session_cookies = {}
-        self.account_id = self.username  # Используем username как account_id
+        self.account_id = self.username
         
         super().__init__(
             hass,
@@ -69,7 +69,7 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             # Проверяем, есть ли действующий токен
             if not self.auth_token:
-                await self._authenticate()
+                await self._authenticate_direct()
             
             # Получаем данные пользователя
             user_info = await self._get_user_info()
@@ -109,86 +109,96 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Ошибка получения данных КСК: %s", err)
             raise UpdateFailed(f"Ошибка получения данных: {err}")
 
-    async def _authenticate(self) -> None:
-        """Авторизация через браузерную автоматизацию."""
+    async def _authenticate_direct(self) -> None:
+        """Прямая авторизация через API без браузера."""
         try:
-            _LOGGER.info("Запуск браузерной авторизации КСК...")
+            _LOGGER.info("Запуск прямой авторизации КСК...")
             
-            # Импортируем selenium только при необходимости
-            try:
-                from selenium import webdriver
-                from selenium.webdriver.common.by import By
-                from selenium.webdriver.chrome.options import Options
-                from selenium.webdriver.chrome.service import Service
-            except ImportError:
-                raise CannotConnect("Selenium не установлен. Установите: apt install python3-selenium")
+            session = async_get_clientsession(self.hass)
             
-            # Настройки Chrome
-            chrome_options = Options()
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
-            chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--window-size=1920,1080')
-            chrome_options.add_argument('--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36')
-            chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
+            # URL для авторизации
+            auth_url = f"{API_BASE_URL}{API_AUTH_URL}"
             
-            service = Service('/usr/bin/chromedriver')
-            driver = webdriver.Chrome(service=service, options=chrome_options)
+            # Заголовки
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+                'Origin': 'https://svet.kaluga.ru',
+                'Referer': 'https://svet.kaluga.ru/',
+                'Content-Type': 'application/json',
+            }
             
-            try:
-                # Открываем страницу авторизации
-                driver.get("https://svet.kaluga.ru/auth")
-                await asyncio.sleep(3)
+            # Пробуем различные форматы данных авторизации
+            auth_attempts = [
+                # Базовый формат
+                {"account": self.username, "password": self.password},
                 
-                # Находим поля и авторизуемся
-                login_field = driver.find_element(By.CSS_SELECTOR, "input[type='text']")
-                password_field = driver.find_element(By.CSS_SELECTOR, "input[type='password']")
+                # С district (найдено в анализе API)
+                {"account": self.username, "password": self.password, "district": 5},
+                {"account": self.username, "password": self.password, "id": 5},
                 
-                login_field.send_keys(self.username)
-                password_field.send_keys(self.password)
+                # Формат с умножением на district (найдено в JS коде)
+                {"account": str(5 * int(1e8) + int(self.username)), "password": self.password},
+                {"account": str(5 * int(1e8) + int(self.username)), "password": self.password, "district": 5},
                 
-                # Отправляем форму
-                form = driver.find_element(By.TAG_NAME, "form")
-                form.submit()
+                # Другие районы
+                {"account": str(6 * int(1e8) + int(self.username)), "password": self.password, "district": 6},
+                {"account": str(7 * int(1e8) + int(self.username)), "password": self.password, "district": 7},
+                {"account": str(8 * int(1e8) + int(self.username)), "password": self.password, "district": 8},
+            ]
+            
+            for i, auth_data in enumerate(auth_attempts, 1):
+                _LOGGER.debug(f"Попытка авторизации {i}/{len(auth_attempts)}")
                 
-                await asyncio.sleep(5)
-                
-                # Извлекаем cookies
-                cookies = driver.get_cookies()
-                for cookie in cookies:
-                    self.session_cookies[cookie['name']] = cookie['value']
-                
-                # Ищем токен в cookies
-                if 'token' in self.session_cookies:
-                    self.auth_token = self.session_cookies['token']
-                    _LOGGER.info("Токен авторизации получен из cookies")
-                else:
-                    # Анализируем сетевые запросы для поиска токена
-                    logs = driver.get_log('performance')
-                    for log in logs:
-                        try:
-                            message = json.loads(log['message'])
-                            if message['message']['method'] == 'Network.requestWillBeSent':
-                                request = message['message']['params']['request']
-                                headers = request.get('headers', {})
-                                if 'authorization' in headers:
-                                    auth_header = headers['authorization']
-                                    if auth_header.startswith('Bearer '):
-                                        self.auth_token = auth_header.replace('Bearer ', '')
-                                        _LOGGER.info("Токен авторизации получен из заголовков")
-                                        break
-                        except:
-                            continue
-                
-                if not self.auth_token:
-                    raise InvalidAuth("Не удалось получить токен авторизации")
-                
-                _LOGGER.info("Авторизация КСК успешна")
-                
-            finally:
-                driver.quit()
-                
+                try:
+                    async with session.post(auth_url, json=auth_data, headers=headers, timeout=30) as response:
+                        
+                        if response.status == 200:
+                            response_data = await response.json()
+                            
+                            if response_data.get('token'):
+                                self.auth_token = response_data['token']
+                                _LOGGER.info("Авторизация КСК успешна")
+                                
+                                # Сохраняем cookies если есть
+                                if response.cookies:
+                                    for cookie in response.cookies:
+                                        self.session_cookies[cookie.key] = cookie.value
+                                
+                                return
+                            elif 'success' in str(response_data).lower():
+                                _LOGGER.debug(f"Возможно успешная авторизация: {response_data}")
+                                # Пробуем извлечь токен из ответа
+                                if 'data' in response_data and isinstance(response_data['data'], dict):
+                                    if 'token' in response_data['data']:
+                                        self.auth_token = response_data['data']['token']
+                                        return
+                        
+                        elif response.status in [400, 404]:
+                            error_data = await response.json()
+                            error_msg = error_data.get('message', 'Unknown error')
+                            
+                            # Если это последняя попытка, выбрасываем исключение
+                            if i == len(auth_attempts):
+                                if 'not registered' in error_msg:
+                                    raise InvalidAuth("Лицевой счет не зарегистрирован в системе")
+                                elif 'inconsistent' in error_msg:
+                                    raise InvalidAuth("Неверная пара логин/пароль")
+                                else:
+                                    raise InvalidAuth(f"Ошибка авторизации: {error_msg}")
+                        
+                        else:
+                            _LOGGER.warning(f"Неожиданный статус ответа: {response.status}")
+                            
+                except Exception as e:
+                    _LOGGER.warning(f"Ошибка в попытке авторизации {i}: {e}")
+                    if i == len(auth_attempts):
+                        raise InvalidAuth(f"Ошибка авторизации: {e}")
+                    continue
+            
+            raise InvalidAuth("Все попытки авторизации исчерпаны")
+            
         except Exception as err:
             _LOGGER.error("Ошибка авторизации КСК: %s", err)
             raise InvalidAuth(f"Ошибка авторизации: {err}")
@@ -233,18 +243,20 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
                     return await response.json()
                     
         except aiohttp.ClientError as err:
-            _LOGGER.error("Ошибка HTTP запроса к %s: %s", url, err)
-            raise CannotConnect(f"Ошибка подключения: {err}")
+            _LOGGER.error("Ошибка HTTP запроса %s: %s", url, err)
+            raise UpdateFailed(f"Ошибка запроса к API: {err}")
 
+    # API методы
     async def _get_user_info(self) -> dict:
         """Получение информации о пользователе."""
         url = f"{API_BASE_URL}{API_USER_INFO_URL}"
         return await self._make_request(url)
 
-    async def _get_accounts(self) -> list:
+    async def _get_accounts(self) -> list[dict]:
         """Получение списка лицевых счетов."""
         url = f"{API_BASE_URL}{API_ACCOUNTS_URL}"
-        return await self._make_request(url)
+        result = await self._make_request(url)
+        return result if isinstance(result, list) else [result]
 
     async def _get_account_details(self, account_id: str) -> dict:
         """Получение детальной информации по лицевому счету."""
@@ -252,26 +264,86 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
         return await self._make_request(url)
 
     async def _get_transmission_details(self, account_id: str) -> dict:
-        """Получение деталей передачи данных."""
+        """Получение деталей передачи показаний."""
         url = f"{API_BASE_URL}{API_TRANSMISSION_DETAILS_URL.format(account_id=account_id)}"
         return await self._make_request(url)
 
-    async def _get_consumption_history(self, account_id: str) -> list:
+    async def _get_consumption_history(self, account_id: str) -> list[dict]:
         """Получение истории потребления."""
-        url = f"{API_BASE_URL}{API_CONSUMPTION_HISTORY_URL.format(account_id=account_id)}"
-        return await self._make_request(url)
+        try:
+            url = f"{API_BASE_URL}{API_CONSUMPTION_HISTORY_URL.format(account_id=account_id)}"
+            return await self._make_request(url)
+        except:
+            return []
 
-    async def _get_payment_history(self, account_id: str) -> list:
+    async def _get_payment_history(self, account_id: str) -> list[dict]:
         """Получение истории платежей."""
-        url = f"{API_BASE_URL}{API_PAYMENT_HISTORY_URL.format(account_id=account_id)}"
-        return await self._make_request(url)
+        try:
+            url = f"{API_BASE_URL}{API_PAYMENT_HISTORY_URL.format(account_id=account_id)}"
+            return await self._make_request(url)
+        except:
+            return []
 
-    async def _get_meter_history(self, account_id: str) -> list:
-        """Получение истории показаний счетчика."""
-        url = f"{API_BASE_URL}{API_METER_HISTORY_URL.format(account_id=account_id)}"
-        return await self._make_request(url)
+    async def _get_meter_history(self, account_id: str) -> list[dict]:
+        """Получение истории показаний счетчиков."""
+        try:
+            url = f"{API_BASE_URL}{API_METER_HISTORY_URL.format(account_id=account_id)}"
+            return await self._make_request(url)
+        except:
+            return []
 
     async def _get_payment_details(self, account_id: str) -> dict:
-        """Получение деталей платежа."""
-        url = f"{API_BASE_URL}{API_PAYMENT_DETAILS_URL.format(account_id=account_id)}"
-        return await self._make_request(url) 
+        """Получение деталей для платежа."""
+        try:
+            url = f"{API_BASE_URL}{API_PAYMENT_DETAILS_URL.format(account_id=account_id)}"
+            return await self._make_request(url)
+        except:
+            return {}
+
+    # Дополнительные методы для интеграции
+    async def submit_meter_readings(self, readings: dict) -> bool:
+        """Отправка показаний счетчиков."""
+        try:
+            url = f"{API_BASE_URL}/api/profile/send-meter-lk"
+            data = {
+                "account": self.account_id,
+                "readings": readings,
+                "period": datetime.now().strftime("%Y-%m")
+            }
+            
+            result = await self._make_request(url, "POST", data)
+            return result.get('success', False)
+            
+        except Exception as err:
+            _LOGGER.error("Ошибка отправки показаний: %s", err)
+            return False
+
+    async def get_payment_link(self, amount: float) -> str:
+        """Получение ссылки на оплату."""
+        try:
+            url = f"{API_BASE_URL}/api/pay/make-paymnet"  # Да, в API опечатка "paymnet"
+            data = {
+                "accountNumber": self.account_id,
+                "amount": str(amount),
+                "deepLink": f"https://svet.kaluga.ru/{self.account_id}",
+                "osType": ""
+            }
+            
+            result = await self._make_request(url, "POST", data)
+            return result.get('formUrl', '')
+            
+        except Exception as err:
+            _LOGGER.error("Ошибка получения ссылки на оплату: %s", err)
+            return ""
+
+    async def get_current_time(self) -> datetime:
+        """Получение текущего времени с сервера."""
+        try:
+            url = f"{API_BASE_URL}/api/service/time"
+            result = await self._make_request(url)
+            if 'currentTime' in result:
+                time_str = result['currentTime'].split('.')[0]  # Убираем миллисекунды
+                return datetime.fromisoformat(time_str)
+            return dt_util.utcnow()
+        except:
+            return dt_util.utcnow()
