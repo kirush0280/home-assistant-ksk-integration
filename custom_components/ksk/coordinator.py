@@ -78,25 +78,49 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
             if not accounts:
                 raise UpdateFailed("Не найдены лицевые счета")
             
-            # Получаем детальную информацию по первому счету
-            account_details = await self._get_account_details(self.account_id)
-            transmission_details = await self._get_transmission_details(self.account_id)
-            
-            # Получаем историю
-            consumption_history = await self._get_consumption_history(self.account_id)
-            payment_history = await self._get_payment_history(self.account_id)
-            meter_history = await self._get_meter_history(self.account_id)
-            payment_details = await self._get_payment_details(self.account_id)
+            # Получаем детальную информацию по всем лицевым счетам
+            accounts_details = {}
+            for account in accounts:
+                account_id = account.get("number")
+                if not account_id:
+                    continue
+                    
+                try:
+                    # Получаем детальную информацию по каждому счету
+                    account_details = await self._get_account_details(account_id)
+                    transmission_details = await self._get_transmission_details(account_id)
+                    
+                    # Получаем историю для каждого счета
+                    consumption_history = await self._get_consumption_history(account_id)
+                    payment_history = await self._get_payment_history(account_id)
+                    meter_history = await self._get_meter_history(account_id)
+                    payment_details = await self._get_payment_details(account_id)
+                    
+                    accounts_details[account_id] = {
+                        "account_details": account_details,
+                        "transmission_details": transmission_details,
+                        "consumption_history": consumption_history,
+                        "payment_history": payment_history,
+                        "meter_history": meter_history,
+                        "payment_details": payment_details,
+                    }
+                    
+                except Exception as err:
+                    _LOGGER.warning(f"Ошибка получения данных для счета {account_id}: {err}")
+                    # Сохраняем пустые данные, чтобы не ломать интеграцию
+                    accounts_details[account_id] = {
+                        "account_details": {},
+                        "transmission_details": {},
+                        "consumption_history": [],
+                        "payment_history": [],
+                        "meter_history": [],
+                        "payment_details": {},
+                    }
             
             return {
                 "user_info": user_info,
                 "accounts": accounts,
-                "account_details": account_details,
-                "transmission_details": transmission_details,
-                "consumption_history": consumption_history,
-                "payment_history": payment_history,
-                "meter_history": meter_history,
-                "payment_details": payment_details,
+                "accounts_details": accounts_details,
                 "last_update": dt_util.utcnow(),
             }
             

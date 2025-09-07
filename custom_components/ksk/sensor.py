@@ -77,6 +77,17 @@ class KSKBaseSensorEntity(CoordinatorEntity[KSKDataUpdateCoordinator], SensorEnt
     def available(self) -> bool:
         """Доступность сенсора."""
         return self.coordinator.data is not None
+    
+    def get_account_details(self, key: str = None):
+        """Получение детальных данных для конкретного лицевого счета."""
+        if not self.coordinator.data or "accounts_details" not in self.coordinator.data:
+            return {} if key else None
+            
+        account_details = self.coordinator.data["accounts_details"].get(self.account_number, {})
+        
+        if key:
+            return account_details.get(key, {})
+        return account_details
 
 
 # =============================================================================
@@ -297,8 +308,8 @@ class KSKReadingsSensor(KSKBaseSensorEntity):
     @property
     def native_value(self) -> float | None:
         """Значение сенсора."""
-        # Получаем показания из transmission данных
-        transmission = self.coordinator.data.get("transmission_details", {})
+        # Получаем показания из transmission данных для конкретного счета
+        transmission = self.get_account_details("transmission_details")
         last_indications = transmission.get("lastIndications", [])
         
         # Для основной зоны берем первое значение
@@ -308,7 +319,18 @@ class KSKReadingsSensor(KSKBaseSensorEntity):
             except (ValueError, IndexError):
                 pass
                 
-        # Ищем в zones
+        # Ищем в zones из transmission данных (они более актуальные)
+        zones = transmission.get("zones", [])
+        for zone in zones:
+            if zone.get("name") == self.zone_name:
+                indication = zone.get("indication")
+                if indication:
+                    try:
+                        return float(indication)
+                    except ValueError:
+                        pass
+        
+        # Если не найдено в transmission, ищем в базовых данных счета
         zones = self.account_data.get("zones", [])
         for zone in zones:
             if zone.get("name") == self.zone_name:
@@ -324,20 +346,29 @@ class KSKReadingsSensor(KSKBaseSensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         """Дополнительные атрибуты."""
-        transmission = self.coordinator.data.get("transmission_details", {})
+        transmission = self.get_account_details("transmission_details")
         zone_info = None
         
-        # Ищем информацию о зоне
-        zones = self.account_data.get("zones", [])
+        # Ищем информацию о зоне в transmission данных
+        zones = transmission.get("zones", [])
         for zone in zones:
             if zone.get("name") == self.zone_name:
                 zone_info = zone
                 break
         
+        # Если не найдено, ищем в базовых данных счета
+        if not zone_info:
+            zones = self.account_data.get("zones", [])
+            for zone in zones:
+                if zone.get("name") == self.zone_name:
+                    zone_info = zone
+                    break
+        
         attrs = {
             "last_period": transmission.get("lastPeriod"),
             "current_period": transmission.get("period"),
             "zone_name": self.zone_name,
+            "account_number": self.account_number,
         }
         
         if zone_info:
@@ -395,7 +426,7 @@ class KSKConsumptionSensor(KSKBaseSensorEntity):
     @property
     def native_value(self) -> float | None:
         """Значение сенсора."""
-        transmission = self.coordinator.data.get("transmission_details", {})
+        transmission = self.get_account_details("transmission_details")
         return transmission.get("amount")
 
 
@@ -420,7 +451,7 @@ class KSKLastConsumptionSensor(KSKBaseSensorEntity):
     @property
     def native_value(self) -> float | None:
         """Значение сенсора."""
-        consumption_history = self.coordinator.data.get("consumption_history", [])
+        consumption_history = self.get_account_details("consumption_history")
         if consumption_history:
             latest = consumption_history[0]
             return latest.get("consumption", 0.0)
@@ -429,15 +460,16 @@ class KSKLastConsumptionSensor(KSKBaseSensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         """Дополнительные атрибуты."""
-        consumption_history = self.coordinator.data.get("consumption_history", [])
+        consumption_history = self.get_account_details("consumption_history")
         if consumption_history:
             latest = consumption_history[0]
             return {
                 "period": latest.get("period"),
                 "amount": latest.get("amount"),
                 "date": latest.get("date"),
+                "account_number": self.account_number,
             }
-        return {}
+        return {"account_number": self.account_number}
 
 
 class KSKLastPaymentSensor(KSKBaseSensorEntity):
@@ -457,7 +489,7 @@ class KSKLastPaymentSensor(KSKBaseSensorEntity):
     @property
     def native_value(self) -> float | None:
         """Значение сенсора."""
-        payment_history = self.coordinator.data.get("payment_history", [])
+        payment_history = self.get_account_details("payment_history")
         if payment_history:
             latest = payment_history[0]
             return latest.get("amount", 0.0)
@@ -466,7 +498,7 @@ class KSKLastPaymentSensor(KSKBaseSensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         """Дополнительные атрибуты."""
-        payment_history = self.coordinator.data.get("payment_history", [])
+        payment_history = self.get_account_details("payment_history")
         if payment_history:
             latest = payment_history[0]
             return {
@@ -474,8 +506,9 @@ class KSKLastPaymentSensor(KSKBaseSensorEntity):
                 "method": latest.get("method"),
                 "status": latest.get("status"),
                 "description": latest.get("description"),
+                "account_number": self.account_number,
             }
-        return {}
+        return {"account_number": self.account_number}
 
 
 class KSKMonthlyConsumptionSensor(KSKBaseSensorEntity):
@@ -496,7 +529,7 @@ class KSKMonthlyConsumptionSensor(KSKBaseSensorEntity):
     @property
     def native_value(self) -> float | None:
         """Значение сенсора."""
-        consumption_history = self.coordinator.data.get("consumption_history", [])
+        consumption_history = self.get_account_details("consumption_history")
         current_month = dt_util.now().month
         current_year = dt_util.now().year
         
@@ -526,7 +559,7 @@ class KSKAverageConsumptionSensor(KSKBaseSensorEntity):
     @property
     def native_value(self) -> float | None:
         """Значение сенсора."""
-        consumption_history = self.coordinator.data.get("consumption_history", [])
+        consumption_history = self.get_account_details("consumption_history")
         if len(consumption_history) >= 3:
             # Берем последние 3 месяца для расчета среднего
             total = sum(item.get("consumption", 0) for item in consumption_history[:3])
@@ -600,18 +633,19 @@ class KSKPaymentDetailsSensor(KSKBaseSensorEntity):
     @property
     def native_value(self) -> float | None:
         """Значение сенсора."""
-        payment_details = self.coordinator.data.get("payment_details", {})
+        payment_details = self.get_account_details("payment_details")
         return payment_details.get("amount", 0.0)
 
     @property
     def extra_state_attributes(self) -> dict:
         """Дополнительные атрибуты."""
-        payment_details = self.coordinator.data.get("payment_details", {})
+        payment_details = self.get_account_details("payment_details")
         return {
             "commission": payment_details.get("commission", 0.0),
             "total_amount": payment_details.get("totalAmount", 0.0),
             "min_amount": payment_details.get("minAmount", 0.0),
             "max_amount": payment_details.get("maxAmount", 0.0),
+            "account_number": self.account_number,
         }
 
 

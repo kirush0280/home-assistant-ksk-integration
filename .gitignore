@@ -79,7 +79,6 @@ node_modules/
 *.temp
 
 # Test files with sensitive data
-test_ksk_api.py
 test_*.py
 debug_*.py
 analyze_*.py
@@ -87,4 +86,6 @@ explore_*.py
 security_*.py
 architectural_*.py
 inspect_*.py
-find_*.py 
+find_*.py
+simple_test.py
+requirements.txt 

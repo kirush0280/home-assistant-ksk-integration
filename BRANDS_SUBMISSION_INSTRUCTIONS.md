@@ -105,3 +105,4 @@ The logo is sourced from the official КSK website: https://svet.kaluga.ru
 
 ---
 *Все логотипы являются собственностью КСК (Калужская Сбытовая Компания) и использованы для идентификации.*
+
