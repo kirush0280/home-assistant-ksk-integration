@@ -408,25 +408,6 @@ class KSKTariffSensor(KSKBaseSensorEntity):
         return None
 
 
-class KSKPaymentAmountSensor(KSKBaseSensorEntity):
-    """Сенсор суммы к доплате."""
-
-    def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
-        super().__init__(
-            coordinator,
-            account_data,
-            "payment_amount",
-            "Сумма к доплате",
-            icon="mdi:cash-multiple",
-            unit="RUB",
-            device_class=SensorDeviceClass.MONETARY,
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Значение сенсора."""
-        transmission = self.get_account_details("transmission_details")
-        return transmission.get("amount")
 
 
 # =============================================================================
@@ -615,37 +596,6 @@ class KSKDataFreshnessSensor(KSKBaseSensorEntity):
         return None
 
 
-class KSKPaymentDetailsSensor(KSKBaseSensorEntity):
-    """Сенсор деталей платежа."""
-
-    def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
-        super().__init__(
-            coordinator,
-            account_data,
-            "payment_details",
-            "Детали платежа",
-            icon="mdi:receipt",
-            unit="RUB",
-            device_class=SensorDeviceClass.MONETARY,
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Значение сенсора."""
-        payment_details = self.get_account_details("payment_details")
-        return payment_details.get("amount", 0.0)
-
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Дополнительные атрибуты."""
-        payment_details = self.get_account_details("payment_details")
-        return {
-            "commission": payment_details.get("commission", 0.0),
-            "total_amount": payment_details.get("totalAmount", 0.0),
-            "min_amount": payment_details.get("minAmount", 0.0),
-            "max_amount": payment_details.get("maxAmount", 0.0),
-            "account_number": self.account_number,
-        }
 
 
 # =============================================================================
@@ -682,11 +632,9 @@ async def async_setup_entry(
                 KSKPenaltySensor(coordinator, account),
                 KSKAcceptedPaymentsSensor(coordinator, account),
                 KSKProcessingPaymentsSensor(coordinator, account),
-                KSKPaymentDetailsSensor(coordinator, account),
                 
                 # Счетчик и показания
                 KSKMeterSensor(coordinator, account),
-                KSKPaymentAmountSensor(coordinator, account),
                 
                 # История
                 KSKLastConsumptionSensor(coordinator, account),
