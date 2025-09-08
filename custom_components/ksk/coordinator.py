@@ -90,17 +90,13 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
                     account_details = await self._get_account_details(account_id)
                     transmission_details = await self._get_transmission_details(account_id)
                     
-                    # Получаем историю для каждого счета
-                    consumption_history = await self._get_consumption_history(account_id)
-                    payment_history = await self._get_payment_history(account_id)
+                    # Получаем историю показаний счетчика и детали платежа
                     meter_history = await self._get_meter_history(account_id)
                     payment_details = await self._get_payment_details(account_id)
                     
                     accounts_details[account_id] = {
                         "account_details": account_details,
                         "transmission_details": transmission_details,
-                        "consumption_history": consumption_history,
-                        "payment_history": payment_history,
                         "meter_history": meter_history,
                         "payment_details": payment_details,
                     }
@@ -111,8 +107,6 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
                     accounts_details[account_id] = {
                         "account_details": {},
                         "transmission_details": {},
-                        "consumption_history": [],
-                        "payment_history": [],
                         "meter_history": [],
                         "payment_details": {},
                     }
@@ -292,21 +286,6 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
         url = f"{API_BASE_URL}{API_TRANSMISSION_DETAILS_URL.format(account_id=account_id)}"
         return await self._make_request(url)
 
-    async def _get_consumption_history(self, account_id: str) -> list[dict]:
-        """Получение истории потребления."""
-        try:
-            url = f"{API_BASE_URL}{API_CONSUMPTION_HISTORY_URL.format(account_id=account_id)}"
-            return await self._make_request(url)
-        except:
-            return []
-
-    async def _get_payment_history(self, account_id: str) -> list[dict]:
-        """Получение истории платежей."""
-        try:
-            url = f"{API_BASE_URL}{API_PAYMENT_HISTORY_URL.format(account_id=account_id)}"
-            return await self._make_request(url)
-        except:
-            return []
 
     async def _get_meter_history(self, account_id: str) -> list[dict]:
         """Получение истории показаний счетчиков."""

@@ -414,137 +414,12 @@ class KSKTariffSensor(KSKBaseSensorEntity):
 # СЕНСОРЫ ИСТОРИИ
 # =============================================================================
 
-class KSKLastConsumptionSensor(KSKBaseSensorEntity):
-    """Сенсор последнего потребления."""
-
-    def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
-        super().__init__(
-            coordinator,
-            account_data,
-            "last_consumption",
-            "Последнее потребление",
-            icon="mdi:history",
-            unit=UnitOfEnergy.KILO_WATT_HOUR,
-            device_class=SensorDeviceClass.ENERGY,
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Значение сенсора."""
-        consumption_history = self.get_account_details("consumption_history")
-        if consumption_history:
-            latest = consumption_history[0]
-            return latest.get("consumption", 0.0)
-        return None
-
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Дополнительные атрибуты."""
-        consumption_history = self.get_account_details("consumption_history")
-        if consumption_history:
-            latest = consumption_history[0]
-            return {
-                "period": latest.get("period"),
-                "amount": latest.get("amount"),
-                "date": latest.get("date"),
-                "account_number": self.account_number,
-            }
-        return {"account_number": self.account_number}
 
 
-class KSKLastPaymentSensor(KSKBaseSensorEntity):
-    """Сенсор последнего платежа."""
-
-    def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
-        super().__init__(
-            coordinator,
-            account_data,
-            "last_payment",
-            "Последний платеж",
-            icon="mdi:credit-card",
-            unit="RUB",
-            device_class=SensorDeviceClass.MONETARY,
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Значение сенсора."""
-        payment_history = self.get_account_details("payment_history")
-        if payment_history:
-            latest = payment_history[0]
-            return latest.get("amount", 0.0)
-        return None
-
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Дополнительные атрибуты."""
-        payment_history = self.get_account_details("payment_history")
-        if payment_history:
-            latest = payment_history[0]
-            return {
-                "date": latest.get("date"),
-                "method": latest.get("method"),
-                "status": latest.get("status"),
-                "description": latest.get("description"),
-                "account_number": self.account_number,
-            }
-        return {"account_number": self.account_number}
 
 
-class KSKMonthlyConsumptionSensor(KSKBaseSensorEntity):
-    """Сенсор месячного потребления."""
-
-    def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
-        super().__init__(
-            coordinator,
-            account_data,
-            "monthly_consumption",
-            "Месячное потребление",
-            icon="mdi:calendar-month",
-            unit=UnitOfEnergy.KILO_WATT_HOUR,
-            device_class=SensorDeviceClass.ENERGY,
-            state_class=SensorStateClass.MEASUREMENT,
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Значение сенсора."""
-        consumption_history = self.get_account_details("consumption_history")
-        current_month = dt_util.now().month
-        current_year = dt_util.now().year
-        
-        for consumption in consumption_history:
-            period = consumption.get("period", "")
-            if f"{current_month:02d}.{current_year}" in period:
-                return consumption.get("consumption", 0.0)
-        
-        return None
 
 
-class KSKAverageConsumptionSensor(KSKBaseSensorEntity):
-    """Сенсор среднего потребления."""
-
-    def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
-        super().__init__(
-            coordinator,
-            account_data,
-            "average_consumption",
-            "Среднее потребление",
-            icon="mdi:chart-line",
-            unit=UnitOfEnergy.KILO_WATT_HOUR,
-            device_class=SensorDeviceClass.ENERGY,
-            state_class=SensorStateClass.MEASUREMENT,
-        )
-
-    @property
-    def native_value(self) -> float | None:
-        """Значение сенсора."""
-        consumption_history = self.get_account_details("consumption_history")
-        if len(consumption_history) >= 3:
-            # Берем последние 3 месяца для расчета среднего
-            total = sum(item.get("consumption", 0) for item in consumption_history[:3])
-            return round(total / 3, 2)
-        return None
 
 
 # =============================================================================
@@ -636,11 +511,7 @@ async def async_setup_entry(
                 # Счетчик и показания
                 KSKMeterSensor(coordinator, account),
                 
-                # История
-                KSKLastConsumptionSensor(coordinator, account),
-                KSKLastPaymentSensor(coordinator, account),
-                KSKMonthlyConsumptionSensor(coordinator, account),
-                KSKAverageConsumptionSensor(coordinator, account),
+                # История (meter_history есть в KSKReadingsSensor)
                 
                 # Технические
                 KSKLastUpdateSensor(coordinator, account),

@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.3] - 2025-09-08
+
+### Удалено
+- Удалены бесполезные сенсоры истории потребления (API не предоставляет эти данные):
+  - KSKLastConsumptionSensor
+  - KSKMonthlyConsumptionSensor  
+  - KSKAverageConsumptionSensor
+- Удален KSKLastPaymentSensor (API не предоставляет payment_history)
+
+### Оптимизировано  
+- Убраны ненужные API запросы к consumption_history и payment_history
+- Уменьшено количество HTTP запросов при обновлении данных
+- Упрощена структура данных координатора
+
+### Техническое
+- Удалены неиспользуемые методы _get_consumption_history() и _get_payment_history()
+- Удалены константы API_CONSUMPTION_HISTORY_URL и API_PAYMENT_HISTORY_URL
+- Оставлены только рабочие endpoints: meter_history работает отлично
+
 ## [1.2.2] - 2025-09-08
 
 ### Удалено
