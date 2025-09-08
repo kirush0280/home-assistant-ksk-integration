@@ -408,19 +408,18 @@ class KSKTariffSensor(KSKBaseSensorEntity):
         return None
 
 
-class KSKConsumptionSensor(KSKBaseSensorEntity):
-    """Сенсор потребления."""
+class KSKPaymentAmountSensor(KSKBaseSensorEntity):
+    """Сенсор суммы к доплате."""
 
     def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
         super().__init__(
             coordinator,
             account_data,
-            "consumption",
-            "Потребление",
-            icon="mdi:flash",
-            unit=UnitOfEnergy.KILO_WATT_HOUR,
-            device_class=SensorDeviceClass.ENERGY,
-            state_class=SensorStateClass.TOTAL,
+            "payment_amount",
+            "Сумма к доплате",
+            icon="mdi:cash-multiple",
+            unit="RUB",
+            device_class=SensorDeviceClass.MONETARY,
         )
 
     @property
@@ -687,7 +686,7 @@ async def async_setup_entry(
                 
                 # Счетчик и показания
                 KSKMeterSensor(coordinator, account),
-                KSKConsumptionSensor(coordinator, account),
+                KSKPaymentAmountSensor(coordinator, account),
                 
                 # История
                 KSKLastConsumptionSensor(coordinator, account),
