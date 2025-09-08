@@ -471,6 +471,168 @@ class KSKDataFreshnessSensor(KSKBaseSensorEntity):
         return None
 
 
+# =============================================================================
+# СЕНСОРЫ ИСТОРИИ ПЛАТЕЖЕЙ
+# =============================================================================
+
+class KSKLastPaymentSensor(KSKBaseSensorEntity):
+    """Сенсор последнего платежа."""
+
+    def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
+        super().__init__(
+            coordinator,
+            account_data,
+            "last_payment",
+            "Последний платеж",
+            icon="mdi:credit-card-clock",
+            unit="RUB",
+            device_class=SensorDeviceClass.MONETARY,
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Значение сенсора - сумма последнего платежа."""
+        payment_history = self.get_account_details("payment_history")
+        
+        if payment_history and len(payment_history) > 0:
+            # Сортируем по дате, берем самый новый
+            sorted_payments = sorted(
+                payment_history, 
+                key=lambda x: x.get("date", ""), 
+                reverse=True
+            )
+            return sorted_payments[0].get("amount", 0.0)
+        return None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Дополнительные атрибуты."""
+        payment_history = self.get_account_details("payment_history")
+        
+        if payment_history and len(payment_history) > 0:
+            # Сортируем по дате, берем самый новый
+            sorted_payments = sorted(
+                payment_history, 
+                key=lambda x: x.get("date", ""), 
+                reverse=True
+            )
+            last_payment = sorted_payments[0]
+            
+            return {
+                "date": last_payment.get("date", "").split("T")[0],  # Только дата без времени
+                "period": last_payment.get("period"),
+                "bank": last_payment.get("bank"),
+                "status": "Зачисленный" if last_payment.get("status") == 1 else "Обработка",
+                "amount": last_payment.get("amount"),
+                "total_payments": len(payment_history),
+                "raw_history": payment_history[:5] if len(payment_history) <= 5 else payment_history[:5],  # Первые 5 платежей
+            }
+        return {}
+
+
+class KSKMonthlyPaymentsSensor(KSKBaseSensorEntity):
+    """Сенсор суммы платежей за текущий месяц."""
+
+    def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
+        super().__init__(
+            coordinator,
+            account_data,
+            "monthly_payments",
+            "Платежи за месяц",
+            icon="mdi:calendar-month",
+            unit="RUB",
+            device_class=SensorDeviceClass.MONETARY,
+        )
+
+    @property
+    def native_value(self) -> float:
+        """Значение сенсора - сумма платежей за текущий месяц."""
+        payment_history = self.get_account_details("payment_history")
+        
+        if not payment_history:
+            return 0.0
+            
+        from datetime import datetime
+        current_month = datetime.now().strftime("%m-%Y")
+        
+        monthly_total = 0.0
+        monthly_payments = []
+        
+        for payment in payment_history:
+            payment_period = payment.get("period", "")
+            if payment_period == current_month and payment.get("status") == 1:  # Только зачисленные платежи
+                amount = payment.get("amount", 0.0)
+                monthly_total += amount
+                monthly_payments.append(payment)
+        
+        return monthly_total
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Дополнительные атрибуты."""
+        payment_history = self.get_account_details("payment_history")
+        
+        if not payment_history:
+            return {"month_payments": [], "count": 0}
+            
+        from datetime import datetime
+        current_month = datetime.now().strftime("%m-%Y")
+        
+        monthly_payments = []
+        for payment in payment_history:
+            payment_period = payment.get("period", "")
+            if payment_period == current_month and payment.get("status") == 1:
+                monthly_payments.append({
+                    "date": payment.get("date", "").split("T")[0],
+                    "amount": payment.get("amount"),
+                    "bank": payment.get("bank"),
+                })
+        
+        return {
+            "month_payments": monthly_payments,
+            "count": len(monthly_payments),
+            "period": current_month,
+        }
+
+
+class KSKPaymentCountSensor(KSKBaseSensorEntity):
+    """Сенсор количества платежей."""
+
+    def __init__(self, coordinator: KSKDataUpdateCoordinator, account_data: dict) -> None:
+        super().__init__(
+            coordinator,
+            account_data,
+            "payment_count",
+            "Количество платежей",
+            icon="mdi:counter",
+            unit="шт",
+            state_class=SensorStateClass.TOTAL,
+        )
+
+    @property
+    def native_value(self) -> int:
+        """Значение сенсора - общее количество платежей."""
+        payment_history = self.get_account_details("payment_history")
+        return len(payment_history) if payment_history else 0
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Дополнительные атрибуты."""
+        payment_history = self.get_account_details("payment_history")
+        
+        if not payment_history:
+            return {"successful": 0, "processing": 0}
+            
+        successful = sum(1 for p in payment_history if p.get("status") == 1)
+        processing = sum(1 for p in payment_history if p.get("status") != 1)
+        
+        return {
+            "successful": successful,
+            "processing": processing,
+            "total_amount": sum(p.get("amount", 0.0) for p in payment_history if p.get("status") == 1),
+        }
+
+
 
 
 # =============================================================================
@@ -507,6 +669,11 @@ async def async_setup_entry(
                 KSKPenaltySensor(coordinator, account),
                 KSKAcceptedPaymentsSensor(coordinator, account),
                 KSKProcessingPaymentsSensor(coordinator, account),
+                
+                # История платежей
+                KSKLastPaymentSensor(coordinator, account),
+                KSKMonthlyPaymentsSensor(coordinator, account),
+                KSKPaymentCountSensor(coordinator, account),
                 
                 # Счетчик и показания
                 KSKMeterSensor(coordinator, account),

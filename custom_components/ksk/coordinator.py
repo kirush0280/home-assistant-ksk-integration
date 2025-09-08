@@ -27,6 +27,7 @@ from .const import (
     API_TRANSMISSION_DETAILS_URL,
     API_METER_HISTORY_URL,
     API_PAYMENT_DETAILS_URL,
+    API_PAYMENT_HISTORY_URL,
     DOMAIN,
     UPDATE_INTERVAL,
 )
@@ -92,11 +93,15 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
                     meter_history = await self._get_meter_history(account_id)
                     payment_details = await self._get_payment_details(account_id)
                     
+                    # Получаем историю платежей
+                    payment_history = await self._get_payment_history(account_id)
+                    
                     accounts_details[account_id] = {
                         "account_details": account_details,
                         "transmission_details": transmission_details,
                         "meter_history": meter_history,
                         "payment_details": payment_details,
+                        "payment_history": payment_history,
                     }
                     
                 except Exception as err:
@@ -107,6 +112,7 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
                         "transmission_details": {},
                         "meter_history": [],
                         "payment_details": {},
+                        "payment_history": [],
                     }
             
             return {
@@ -300,6 +306,16 @@ class KSKDataUpdateCoordinator(DataUpdateCoordinator):
             return await self._make_request(url)
         except:
             return {}
+
+    async def _get_payment_history(self, account_id: str) -> list[dict]:
+        """Получение истории платежей по лицевому счету."""
+        try:
+            url = f"{API_BASE_URL}{API_PAYMENT_HISTORY_URL.format(account_id=account_id)}"
+            result = await self._make_request(url)
+            return result if isinstance(result, list) else []
+        except Exception as err:
+            _LOGGER.warning(f"Не удалось получить историю платежей для счета {account_id}: {err}")
+            return []
 
     # Дополнительные методы для интеграции
     async def submit_meter_readings(self, readings: dict) -> bool:

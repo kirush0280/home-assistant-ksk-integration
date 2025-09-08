@@ -50,6 +50,7 @@ API_ACCOUNT_DETAILS_URL: Final = "/api/profile/account/{account_id}"
 API_TRANSMISSION_DETAILS_URL: Final = "/api/profile/transmission-details/{account_id}"
 API_METER_HISTORY_URL: Final = "/history/meters/{account_id}"
 API_PAYMENT_DETAILS_URL: Final = "/api/pay/paymentDetails/{account_id}"
+API_PAYMENT_HISTORY_URL: Final = "/history/payments/{account_id}"
 API_TIME_URL: Final = "/service/api/service/time"
 
 FORMAT_DATE_SHORT_YEAR: Final = "%d.%m.%y"
